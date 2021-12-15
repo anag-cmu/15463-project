@@ -42,6 +42,7 @@ class BilateralGrid:
 
 		# map the hashed coordinates to unique vertices in the voxel grid
 		unique_coords = {}
+
 		# row indices of vertices for each pixel column
 		splat_rows = np.zeros(self.npixels)
 
@@ -179,7 +180,7 @@ class BilateralSolver:
 
 
 class BilateralWrapper:
-	def __init__(self, npz_file):
+	def __init__(self, npz_file, name):
 		# first we must normalize the depth map because we assume target is normalized
 		fname = os.path.join(os.path.realpath("../"), "data", npz_file)
 		with np.load(fname) as Y:
@@ -196,15 +197,39 @@ class BilateralWrapper:
 		self.solPixel = ((self.solPixel) * (diffDisp)) + minDisp
 		self.refSol = I0.T
 		self.pixelConf = pixelConf
-		self.pixelDisp = pixelDisp
+		self.pixelDisp = (pixelDisp * diffDisp) + minDisp
+		self.Name = name
+
+	def hsv_pixelwise(self, disp):
+		H = np.zeros_like(disp)
+		S = np.abs(disp) / 4 # normalized depth
+		V = np.copy(self.pixelConf.T) # map value to confidence
+		neg = np.where(disp < 0.0)
+		pos = np.where(disp >= 0.0)
+		H[neg] = 90.0 / 180.0
+		H[pos] = 0.0
+		HSV = np.dstack((H, S, V))
+		RGB = hsv_to_rgb(HSV)
+		return RGB
 
 	def plot_sol(self):
-		plt.figure()
-		plt.imshow(self.solPixel, cmap="hot")
-		plt.figure()
-		plt.imshow(self.pixelDisp.T, cmap="hot")
+		plt_title = "Pixel Disparities {}".format(self.Name)
+		smooth_title = plt_title + " Smoothed"
+		fig1, axs1 = plt.subplots(1, 2)
+		im1 = axs1[0].imshow(self.solPixel, cmap="jet")
+		axs1[1].imshow(self.hsv_pixelwise(self.solPixel))
+		fig1.colorbar(im1)
+		plt.suptitle(smooth_title)
+
+		fig2, axs2 = plt.subplots(1, 2)
+		im2 = axs2[0].imshow(self.pixelDisp.T, cmap="jet")
+		axs2[1].imshow(self.hsv_pixelwise(self.pixelDisp.T))
+		fig2.colorbar(im2)
+		plt.suptitle(plt_title)
+
 		plt.figure()
 		plt.imshow(self.pixelConf.T, cmap="gray")
+		plt.title("Confidence")
 
 	def save_info(self, name):
 		fname = "{}_smoothed.npz".format(name)
@@ -214,7 +239,7 @@ class BilateralWrapper:
 
 if __name__ == "__main__":
 	fname_load = "{}_data.npz".format(sys.argv[1])
-	Wrapper_1 = BilateralWrapper(fname_load)
+	Wrapper_1 = BilateralWrapper(fname_load, sys.argv[1])
 	Wrapper_1.plot_sol()
 	#Wrapper_1.save_info(sys.argv[1])
 	plt.show()

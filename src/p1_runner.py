@@ -476,14 +476,6 @@ class Image:
 			pixel_disp[i, j] = u
 			pixel_conf[i, j] = c
 
-		"""
-		for j in range(0, self.W):
-			for i in range(0, self.H):
-				u, c = get_pixel_est(j, i, self.subpix, self.conf, f0, f1)
-				pixel_disp[i, j] = u
-				pixel_conf[i, j] = c
-		"""
-
 		return pixel_disp, pixel_conf
 
 	# PLOTTING FUNCTIONS
@@ -538,9 +530,9 @@ class Image:
 		V = np.copy(self.pixConf.T) # map value to confidence
 		if (denoise):
 			V = self.smooth_conf(V)
-		neg = np.where(self.pixDisp.T < 0.0)[0]
-		pos = np.where(self.pixDisp.T >= 0.0)[0]
-		H[neg] = 120.0 / 180.0
+		neg = np.where(self.pixDisp.T < 0.0)
+		pos = np.where(self.pixDisp.T >= 0.0)
+		H[neg] = 90.0 / 180.0
 		H[pos] = 0.0
 		HSV = np.dstack((H, S, V))
 		RGB = hsv_to_rgb(HSV)

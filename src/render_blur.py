@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.ndimage import convolve
 from skimage.draw import disk
+from skimage.io import imsave
 import cv2
 import matplotlib.pyplot as plt
 import sys
@@ -101,4 +102,7 @@ if __name__ == "__main__":
 	fig, axs = plt.subplots(1, 2)
 	axs[0].imshow(blurred)
 	axs[1].imshow(blurrer.OG_img)
+
+	final_img = "{}_blurred.png".format(sys.argv[1])
+	imsave(final_img, np.clip(blurred*255, 0, 1))
 	plt.show()
